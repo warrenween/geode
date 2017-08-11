@@ -72,11 +72,11 @@ public class SocketCloserJUnitTest {
     // They should all be stuck on countDownLatch.
     for (int i = 0; i < REMOTE_CLIENT_COUNT; i++) {
       Socket[] aSockets = new Socket[SOCKET_COUNT];
-
+      String address = i + "";
       for (int j = 0; j < SOCKET_COUNT; j++) {
         aSockets[j] = createClosableSocket();
         trackedSockets.add(aSockets[j]);
-        this.socketCloser.asyncClose(aSockets[j], () -> {
+        this.socketCloser.asyncClose(aSockets[j], address, () -> {
           try {
             waitingToClose.incrementAndGet();
             countDownLatch.await();
@@ -115,7 +115,7 @@ public class SocketCloserJUnitTest {
 
     Socket s = createClosableSocket();
     s.close();
-    this.socketCloser.asyncClose(s, () -> runnableCalled.set(true));
+    this.socketCloser.asyncClose(s, "A", () -> runnableCalled.set(true));
     Awaitility.await().atMost(1, TimeUnit.SECONDS).until(() -> !runnableCalled.get());
   }
 
@@ -128,7 +128,7 @@ public class SocketCloserJUnitTest {
 
     final Socket closableSocket = createClosableSocket();
     this.socketCloser.close();
-    this.socketCloser.asyncClose(closableSocket, () -> runnableCalled.set(true));
+    this.socketCloser.asyncClose(closableSocket, "A", () -> runnableCalled.set(true));
     Awaitility.await().atMost(5, TimeUnit.SECONDS)
         .until(() -> runnableCalled.get() && closableSocket.isClosed());
   }
