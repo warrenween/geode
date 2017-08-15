@@ -135,7 +135,8 @@ public class SocketCloser {
     };
 
     executorService = new ThreadPoolExecutor(asyncClosePoolMaxThreads, asyncClosePoolMaxThreads,
-        asyncClosePoolKeepAliveSeconds, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), threadFactory);
+        asyncClosePoolKeepAliveSeconds, TimeUnit.SECONDS, new LinkedBlockingQueue<>(),
+        threadFactory);
   }
 
   /**
