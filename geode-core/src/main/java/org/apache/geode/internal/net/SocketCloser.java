@@ -135,7 +135,7 @@ public class SocketCloser {
     };
 
     executorService = new ThreadPoolExecutor(asyncClosePoolMaxThreads, asyncClosePoolMaxThreads,
-        asyncCloseWaitTime, asyncCloseWaitUnits, new LinkedBlockingQueue<>(), threadFactory);
+        asyncClosePoolKeepAliveSeconds, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), threadFactory);
   }
 
   /**
@@ -165,8 +165,8 @@ public class SocketCloser {
     }
     for (ExecutorService executorService : asyncCloseExecutors.values()) {
       executorService.shutdown();
-      asyncCloseExecutors.clear();
     }
+    asyncCloseExecutors.clear();
   }
 
   private Future asyncExecute(String address, Runnable runnableToExecute) {
@@ -232,7 +232,7 @@ public class SocketCloser {
       try {
         submittedTask.get(this.asyncCloseWaitTime, this.asyncCloseWaitUnits);
       } catch (InterruptedException | ExecutionException | TimeoutException e) {
-        // We want this code to wait at most 50ms for the close to happen.
+        // We want this code to wait at most the asyncCloseWaitTime for the close to happen.
         // It is ok to ignore these exception and let the close continue
         // in the background.
       }
