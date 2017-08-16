@@ -929,6 +929,10 @@ public class ConnectionTable {
               owner.getDM().getMembershipManager().getShutdownCause());
         }
       }
+
+      if (remoteAddress != null) {
+        this.socketCloser.releaseResourcesForAddress(remoteAddress.toString());
+      }
     }
   }
 
