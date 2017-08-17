@@ -103,7 +103,7 @@ public class SocketCloser {
     ExecutorService executorService = asyncCloseExecutors.get(address);
     if (executorService == null) {
       // To be used for pre-1.8 jdk releases.
-      // createThreadPool();
+      // executorService = createThreadPool();
 
       executorService = Executors.newWorkStealingPool(asyncClosePoolMaxThreads);
 
@@ -122,8 +122,7 @@ public class SocketCloser {
    * @deprecated this method is to be used for pre 1.8 jdk.
    */
   @Deprecated
-  private void createThreadPool() {
-    ExecutorService executorService;
+  private ExecutorService createThreadPool() {
     final ThreadGroup threadGroup =
         LoggingThreadGroup.createThreadGroup("Socket asyncClose", logger);
     ThreadFactory threadFactory = new ThreadFactory() {
@@ -134,7 +133,7 @@ public class SocketCloser {
       }
     };
 
-    executorService = new ThreadPoolExecutor(asyncClosePoolMaxThreads, asyncClosePoolMaxThreads,
+    return new ThreadPoolExecutor(asyncClosePoolMaxThreads, asyncClosePoolMaxThreads,
         asyncClosePoolKeepAliveSeconds, TimeUnit.SECONDS, new LinkedBlockingQueue<>(),
         threadFactory);
   }
