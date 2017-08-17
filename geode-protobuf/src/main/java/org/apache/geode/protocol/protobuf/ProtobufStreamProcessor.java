@@ -27,6 +27,7 @@ import org.apache.geode.protocol.exception.InvalidProtocolMessageException;
 import org.apache.geode.protocol.protobuf.registry.OperationContextRegistry;
 import org.apache.geode.protocol.protobuf.serializer.ProtobufProtocolSerializer;
 import org.apache.geode.protocol.protobuf.utilities.ProtobufUtilities;
+import org.apache.geode.security.StreamAuthorizer;
 import org.apache.geode.serialization.registry.exception.CodecAlreadyRegisteredForTypeException;
 
 /**
@@ -45,15 +46,16 @@ public class ProtobufStreamProcessor implements ClientProtocolMessageHandler {
         new OperationContextRegistry());
   }
 
-  public void processOneMessage(InputStream inputStream, OutputStream outputStream, Cache cache)
-      throws InvalidProtocolMessageException, IOException {
+  // TODO: refactor this to use execution context
+  public void processOneMessage(InputStream inputStream, OutputStream outputStream, Cache cache,
+      StreamAuthorizer authorizer) throws InvalidProtocolMessageException, IOException {
     ClientProtocol.Message message = protobufProtocolSerializer.deserialize(inputStream);
     if (message == null) {
       throw new EOFException("Tried to deserialize protobuf message at EOF");
     }
 
     ClientProtocol.Request request = message.getRequest();
-    ClientProtocol.Response response = protobufOpsProcessor.process(request, cache);
+    ClientProtocol.Response response = protobufOpsProcessor.process(request, cache, authorizer);
     ClientProtocol.MessageHeader responseHeader =
         ProtobufUtilities.createMessageHeaderForRequest(message);
     ClientProtocol.Message responseMessage =
@@ -61,11 +63,12 @@ public class ProtobufStreamProcessor implements ClientProtocolMessageHandler {
     protobufProtocolSerializer.serialize(responseMessage, outputStream);
   }
 
+  // TODO: refactor this to use execution context
   @Override
   public void receiveMessage(InputStream inputStream, OutputStream outputStream,
-      InternalCache cache) throws IOException {
+      InternalCache cache, StreamAuthorizer authorizer) throws IOException {
     try {
-      processOneMessage(inputStream, outputStream, cache);
+      processOneMessage(inputStream, outputStream, cache, authorizer);
     } catch (InvalidProtocolMessageException e) {
       throw new IOException(e);
     }

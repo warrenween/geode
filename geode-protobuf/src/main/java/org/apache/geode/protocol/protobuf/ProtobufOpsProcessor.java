@@ -17,6 +17,8 @@ package org.apache.geode.protocol.protobuf;
 import org.apache.geode.annotations.Experimental;
 import org.apache.geode.cache.Cache;
 import org.apache.geode.protocol.protobuf.registry.OperationContextRegistry;
+import org.apache.geode.protocol.protobuf.utilities.ProtobufResponseUtilities;
+import org.apache.geode.security.StreamAuthorizer;
 import org.apache.geode.serialization.SerializationService;
 
 /**
@@ -35,12 +37,21 @@ public class ProtobufOpsProcessor {
     this.operationContextRegistry = operationContextRegistry;
   }
 
-  public ClientProtocol.Response process(ClientProtocol.Request request, Cache cache) {
+  // TODO: refactor this to use an execution context
+  public ClientProtocol.Response process(ClientProtocol.Request request, Cache cache,
+      StreamAuthorizer authorizer) {
     ClientProtocol.Request.RequestAPICase requestType = request.getRequestAPICase();
     OperationContext operationContext = operationContextRegistry.getOperationContext(requestType);
     ClientProtocol.Response.Builder builder;
-    Result result = operationContext.getOperationHandler().process(serializationService,
-        operationContext.getFromRequest().apply(request), cache);
+    Result result;
+    if (authorizer.authorize(operationContext.getAccessPermissionRequired())) {
+      result = operationContext.getOperationHandler().process(serializationService,
+          operationContext.getFromRequest().apply(request), cache);
+    } else {
+      result = Failure.of(ProtobufResponseUtilities.makeErrorResponse(
+          ProtocolErrorCode.AUTHORIZATION_FAILED.codeValue,
+          "User isn't authorized for this operation."));
+    }
 
     builder = (ClientProtocol.Response.Builder) result.map(operationContext.getToResponse(),
         operationContext.getToErrorResponse());
